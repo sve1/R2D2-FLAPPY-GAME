@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Flappy R2-D2</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: url('https://i.imgur.com/1wBfNq1.jpg') repeat-x center;
+      background-size: cover;
+    }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="480" height="640"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const GRAVITY = 0.5;
+const JUMP = -10;
+const PIPE_WIDTH = 60;
+const PIPE_GAP = 150;
+const PIPE_SPEED = 2;
+
+let r2d2Img = new Image();
+r2d2Img.src = 'R2D2-removebg-preview.png';
+
+let r2d2 = {
+  x: 50,
+  y: 150,
+  width: 50,
+  height: 60,
+  velocity: 0
+};
+
+let pipes = [];
+let score = 0;
+let gameOver = false;
+
+function resetGame() {
+  r2d2.y = 150;
+  r2d2.velocity = 0;
+  pipes = [];
+  score = 0;
+  gameOver = false;
+}
+
+function createPipe() {
+  let topHeight = Math.random() * (canvas.height - PIPE_GAP - 100);
+  pipes.push({
+    x: canvas.width,
+    top: topHeight,
+    bottom: topHeight + PIPE_GAP
+  });
+}
+
+function drawR2D2() {
+  ctx.drawImage(r2d2Img, r2d2.x, r2d2.y, r2d2.width, r2d2.height);
+}
+
+function drawPipes() {
+  ctx.fillStyle = '#4CAF50';
+  pipes.forEach(pipe => {
+    ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.top);
+    ctx.fillRect(pipe.x, pipe.bottom, PIPE_WIDTH, canvas.height - pipe.bottom);
+  });
+}
+
+function drawScore() {
+  ctx.fillStyle = 'white';
+  ctx.font = '24px Arial';
+  ctx.fillText(`Score: ${score}`, 10, 30);
+}
+
+function update() {
+  if (gameOver) return;
+
+  r2d2.velocity += GRAVITY;
+  r2d2.y += r2d2.velocity;
+
+  if (r2d2.y + r2d2.height > canvas.height || r2d2.y < 0) {
+    gameOver = true;
+  }
+
+  pipes.forEach(pipe => {
+    pipe.x -= PIPE_SPEED;
+    if (
+      r2d2.x < pipe.x + PIPE_WIDTH &&
+      r2d2.x + r2d2.width > pipe.x &&
+      (r2d2.y < pipe.top || r2d2.y + r2d2.height > pipe.bottom)
+    ) {
+      gameOver = true;
+    }
+    if (pipe.x + PIPE_WIDTH === r2d2.x) score++;
+  });
+
+  if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
+    createPipe();
+  }
+
+  pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawR2D2();
+  drawPipes();
+  drawScore();
+  if (gameOver) {
+    ctx.fillStyle = 'red';
+    ctx.font = '48px Arial';
+    ctx.fillText('Game Over', 100, canvas.height / 2);
+    ctx.font = '24px Arial';
+    ctx.fillText('Press R to Restart', 120, canvas.height / 2 + 40);
+  }
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space' && !gameOver) {
+    r2d2.velocity = JUMP;
+  } else if (e.code === 'KeyR' && gameOver) {
+    resetGame();
+  }
+});
+
+r2d2Img.onload = () => {
+  loop();
+};
+</script>
+</body>
+</html>
